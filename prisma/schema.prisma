@@ -1,0 +1,207 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Multi-tenant: cada Oficina é um cliente do sistema (uma oficina mecânica).
+// Todas as outras tabelas pertencem a uma Oficina (isolamento por oficinaId).
+// ---------------------------------------------------------------------------
+
+model Oficina {
+  id        String   @id @default(cuid())
+  nome      String
+  telefone  String?
+  cidade    String?
+  estado    String?
+  criadoEm  DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  usuarios      Usuario[]
+  clientes      Cliente[]
+  veiculos      Veiculo[]
+  agendamentos  Agendamento[]
+  produtos      Produto[]
+  vendas        Venda[]
+  itensRevisao  ItemRevisao[]
+
+  @@map("oficinas")
+}
+
+enum PapelUsuario {
+  DONO
+  FUNCIONARIO
+}
+
+model Usuario {
+  id         String       @id @default(cuid())
+  oficinaId  String
+  oficina    Oficina      @relation(fields: [oficinaId], references: [id], onDelete: Cascade)
+  nome       String
+  telefone   String       @unique
+  email      String?      @unique
+  senhaHash  String
+  papel      PapelUsuario @default(FUNCIONARIO)
+  ativo      Boolean      @default(true)
+  criadoEm   DateTime     @default(now())
+  atualizadoEm DateTime   @updatedAt
+
+  agendamentosResponsavel Agendamento[] @relation("UsuarioResponsavel")
+  vendasRegistradas       Venda[]
+
+  @@index([oficinaId])
+  @@map("usuarios")
+}
+
+model Cliente {
+  id        String   @id @default(cuid())
+  oficinaId String
+  oficina   Oficina  @relation(fields: [oficinaId], references: [id], onDelete: Cascade)
+  nome      String
+  telefone  String?
+  criadoEm  DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  veiculos     Veiculo[]
+  agendamentos Agendamento[]
+  vendas       Venda[]
+
+  @@index([oficinaId])
+  @@map("clientes")
+}
+
+enum TipoVeiculo {
+  MOTO
+  CARRO
+  OUTRO
+}
+
+model Veiculo {
+  id            String      @id @default(cuid())
+  oficinaId     String
+  oficina       Oficina     @relation(fields: [oficinaId], references: [id], onDelete: Cascade)
+  clienteId     String
+  cliente       Cliente     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  tipo          TipoVeiculo @default(MOTO)
+  marca         String?
+  modelo        String?
+  placa         String?
+  anoFabricacao Int?
+  cor           String?
+  criadoEm      DateTime    @default(now())
+  atualizadoEm  DateTime    @updatedAt
+
+  agendamentos Agendamento[]
+
+  @@index([oficinaId])
+  @@index([clienteId])
+  @@map("veiculos")
+}
+
+enum StatusAgendamento {
+  AGENDADO
+  EM_ATENDIMENTO
+  CONCLUIDO
+  CANCELADO
+}
+
+model Agendamento {
+  id                  String            @id @default(cuid())
+  oficinaId           String
+  oficina             Oficina           @relation(fields: [oficinaId], references: [id], onDelete: Cascade)
+  clienteId           String
+  cliente             Cliente           @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  veiculoId           String
+  veiculo             Veiculo           @relation(fields: [veiculoId], references: [id], onDelete: Cascade)
+  usuarioResponsavelId String?
+  usuarioResponsavel   Usuario?         @relation("UsuarioResponsavel", fields: [usuarioResponsavelId], references: [id])
+  dataHora            DateTime
+  status              StatusAgendamento @default(AGENDADO)
+  problemaRelatado    String?
+  servicoRealizado    String?
+  valor               Decimal?          @db.Decimal(10, 2)
+  revisaoEnviadaEm    DateTime?
+  criadoEm            DateTime          @default(now())
+  atualizadoEm        DateTime          @updatedAt
+
+  itensRevisao ItemRevisao[]
+
+  @@index([oficinaId, dataHora])
+  @@map("agendamentos")
+}
+
+model Produto {
+  id          String   @id @default(cuid())
+  oficinaId   String
+  oficina     Oficina  @relation(fields: [oficinaId], references: [id], onDelete: Cascade)
+  nome        String
+  categoria   String?
+  precoVenda  Decimal  @db.Decimal(10, 2)
+  custo       Decimal? @db.Decimal(10, 2)
+  estoqueQtd  Int      @default(0)
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  itensVenda ItemVenda[]
+
+  @@index([oficinaId])
+  @@map("produtos")
+}
+
+model Venda {
+  id            String   @id @default(cuid())
+  oficinaId     String
+  oficina       Oficina  @relation(fields: [oficinaId], references: [id], onDelete: Cascade)
+  clienteId     String?
+  cliente       Cliente? @relation(fields: [clienteId], references: [id])
+  agendamentoId String?  @unique
+  usuarioId     String
+  usuario       Usuario  @relation(fields: [usuarioId], references: [id])
+  dataHora      DateTime @default(now())
+  valorTotal    Decimal  @db.Decimal(10, 2)
+  criadoEm      DateTime @default(now())
+
+  itens ItemVenda[]
+
+  @@index([oficinaId, dataHora])
+  @@map("vendas")
+}
+
+model ItemVenda {
+  id             String  @id @default(cuid())
+  vendaId        String
+  venda          Venda   @relation(fields: [vendaId], references: [id], onDelete: Cascade)
+  produtoId      String
+  produto        Produto @relation(fields: [produtoId], references: [id])
+  quantidade     Int
+  precoUnitario  Decimal @db.Decimal(10, 2)
+
+  @@map("itens_venda")
+}
+
+// ---------------------------------------------------------------------------
+// Revisão: durante o atendimento, o mecânico registra os itens encontrados
+// (peça/serviço necessário) com foto/vídeo de evidência e valor estimado.
+// Não tem FK pra Produto ainda (valor manual) — isso entra quando a Loja
+// existir. O envio pro cliente é feito via link do WhatsApp (ver /r/[id]),
+// sem chat dentro do app.
+// ---------------------------------------------------------------------------
+
+model ItemRevisao {
+  id            String      @id @default(cuid())
+  oficinaId     String
+  oficina       Oficina     @relation(fields: [oficinaId], references: [id], onDelete: Cascade)
+  agendamentoId String
+  agendamento   Agendamento @relation(fields: [agendamentoId], references: [id], onDelete: Cascade)
+  descricao     String
+  valor         Decimal?    @db.Decimal(10, 2)
+  midias        String[]    @default([])
+  criadoEm      DateTime    @default(now())
+
+  @@index([oficinaId])
+  @@index([agendamentoId])
+  @@map("itens_revisao")
+}
