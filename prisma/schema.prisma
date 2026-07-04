@@ -51,6 +51,7 @@ model Usuario {
 
   agendamentosResponsavel Agendamento[] @relation("UsuarioResponsavel")
   vendasRegistradas       Venda[]
+  pushSubscriptions       PushSubscription[]
 
   @@index([oficinaId])
   @@map("usuarios")
@@ -190,18 +191,45 @@ model ItemVenda {
 // sem chat dentro do app.
 // ---------------------------------------------------------------------------
 
+enum StatusItemRevisao {
+  PENDENTE
+  APROVADO
+  RECUSADO
+}
+
 model ItemRevisao {
-  id            String      @id @default(cuid())
+  id            String            @id @default(cuid())
   oficinaId     String
-  oficina       Oficina     @relation(fields: [oficinaId], references: [id], onDelete: Cascade)
+  oficina       Oficina           @relation(fields: [oficinaId], references: [id], onDelete: Cascade)
   agendamentoId String
-  agendamento   Agendamento @relation(fields: [agendamentoId], references: [id], onDelete: Cascade)
+  agendamento   Agendamento       @relation(fields: [agendamentoId], references: [id], onDelete: Cascade)
   descricao     String
-  valor         Decimal?    @db.Decimal(10, 2)
-  midias        String[]    @default([])
-  criadoEm      DateTime    @default(now())
+  valor         Decimal?          @db.Decimal(10, 2)
+  midias        String[]          @default([])
+  status        StatusItemRevisao @default(PENDENTE)
+  decididoEm    DateTime?
+  vistoOficinaEm DateTime?
+  criadoEm      DateTime          @default(now())
 
   @@index([oficinaId])
   @@index([agendamentoId])
   @@map("itens_revisao")
+}
+
+// ---------------------------------------------------------------------------
+// Web Push: uma linha por dispositivo/navegador inscrito pra receber
+// notificações (ex: cliente decidiu um item da revisão).
+// ---------------------------------------------------------------------------
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  criadoEm  DateTime @default(now())
+
+  @@index([usuarioId])
+  @@map("push_subscriptions")
 }

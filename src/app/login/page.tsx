@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { login } from "./actions";
 
 export default async function LoginPage({
@@ -13,6 +14,14 @@ export default async function LoginPage({
         action={login}
         className="w-full max-w-sm space-y-4 rounded-2xl border border-border bg-surface p-6"
       >
+        <Image
+          src="/icon.svg"
+          alt=""
+          width={64}
+          height={64}
+          className="mx-auto rounded-2xl"
+        />
+
         <h1 className="text-center text-2xl font-semibold text-ink">
           Entrar na Oficina
         </h1>

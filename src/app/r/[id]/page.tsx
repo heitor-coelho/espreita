@@ -1,6 +1,11 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { arquivoEhVideo } from "@/lib/midia";
+import { ItemRevisaoAprovacao } from "@/components/item-revisao-aprovacao";
+import {
+  ITEM_REVISAO_STATUS_LABEL,
+  ITEM_REVISAO_STATUS_BADGE_CLASS,
+} from "@/lib/item-revisao-status";
 
 // Página pública (sem login) — link enviado ao cliente por WhatsApp pra ele
 // ver as fotos/vídeos e valores da revisão do próprio veículo.
@@ -33,6 +38,14 @@ export default async function RevisaoPublicaPage({
     0,
   );
 
+  const valorAprovado = agendamento.itensRevisao
+    .filter((item) => item.status === "APROVADO")
+    .reduce((soma, item) => soma + (item.valor ? Number(item.valor) : 0), 0);
+
+  const temDecisao = agendamento.itensRevisao.some(
+    (item) => item.status !== "PENDENTE",
+  );
+
   return (
     <div className="min-h-screen bg-background px-4 py-6 text-foreground">
       <div className="mx-auto max-w-md">
@@ -40,10 +53,23 @@ export default async function RevisaoPublicaPage({
         <h1 className="mb-1 text-lg font-medium text-ink">
           Revisão de {agendamento.cliente.nome}
         </h1>
-        <p className="mb-5 text-xs text-ink-muted">
+        <p className="mb-1 text-xs text-ink-muted">
           {veiculoDescricao}
           {agendamento.veiculo.placa ? ` · ${agendamento.veiculo.placa}` : ""}
         </p>
+
+        {agendamento.itensRevisao.length > 0 &&
+          (agendamento.status === "CONCLUIDO" ? (
+            <p className="mb-5 text-xs text-ink-muted">
+              Atendimento já concluído. Veja abaixo o que foi decidido em cada
+              item.
+            </p>
+          ) : (
+            <p className="mb-5 text-xs text-ink-muted">
+              Toque em cada item pra dizer se autoriza ou não o reparo. Você
+              pode autorizar só o que quiser — o restante fica de fora.
+            </p>
+          ))}
 
         {agendamento.itensRevisao.length === 0 ? (
           <p className="rounded-lg border border-border bg-surface p-4 text-sm text-ink-muted">
@@ -86,17 +112,40 @@ export default async function RevisaoPublicaPage({
                     )}
                   </div>
                 )}
+                {agendamento.status === "CONCLUIDO" ? (
+                  <span
+                    className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${ITEM_REVISAO_STATUS_BADGE_CLASS[item.status]}`}
+                  >
+                    {ITEM_REVISAO_STATUS_LABEL[item.status]}
+                  </span>
+                ) : (
+                  <ItemRevisaoAprovacao
+                    agendamentoId={agendamento.id}
+                    itemId={item.id}
+                    statusInicial={item.status}
+                  />
+                )}
               </li>
             ))}
           </ul>
         )}
 
         {agendamento.itensRevisao.length > 0 && (
-          <div className="mt-4 flex items-center justify-between rounded-lg bg-surface-2 px-3 py-2">
-            <span className="text-xs text-ink-muted">Total estimado</span>
-            <span className="text-sm font-medium text-ink">
-              R$ {valorTotal.toFixed(2).replace(".", ",")}
-            </span>
+          <div className="mt-4 space-y-1.5 rounded-lg bg-surface-2 px-3 py-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-ink-muted">Total estimado</span>
+              <span className="text-sm font-medium text-ink">
+                R$ {valorTotal.toFixed(2).replace(".", ",")}
+              </span>
+            </div>
+            {temDecisao && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-ink-muted">Total autorizado</span>
+                <span className="text-sm font-medium text-ink">
+                  R$ {valorAprovado.toFixed(2).replace(".", ",")}
+                </span>
+              </div>
+            )}
           </div>
         )}
 

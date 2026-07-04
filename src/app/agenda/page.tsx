@@ -51,7 +51,14 @@ export default async function AgendaPage({
       oficinaId: session.user.oficinaId,
       dataHora: { gte: inicioSemana, lte: fimSemana },
     },
-    include: { cliente: true, veiculo: true },
+    include: {
+      cliente: true,
+      veiculo: true,
+      itensRevisao: {
+        where: { status: { not: "PENDENTE" }, vistoOficinaEm: null },
+        select: { id: true },
+      },
+    },
     orderBy: { dataHora: "asc" },
   });
 
@@ -138,7 +145,11 @@ export default async function AgendaPage({
         ) : (
           <ul className="space-y-3">
             {listaSelecionada.map((ag) => (
-              <AgendamentoCard key={ag.id} agendamento={ag} />
+              <AgendamentoCard
+                key={ag.id}
+                agendamento={ag}
+                temNovidade={ag.itensRevisao.length > 0}
+              />
             ))}
           </ul>
         )}
@@ -165,7 +176,12 @@ export default async function AgendaPage({
                   <li className="px-1 text-[11px] text-ink-faint">—</li>
                 ) : (
                   lista.map((ag) => (
-                    <AgendamentoCard key={ag.id} agendamento={ag} compact />
+                    <AgendamentoCard
+                      key={ag.id}
+                      agendamento={ag}
+                      compact
+                      temNovidade={ag.itensRevisao.length > 0}
+                    />
                   ))
                 )}
               </ul>

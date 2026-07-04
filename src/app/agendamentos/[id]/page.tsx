@@ -5,6 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { AppShell } from "@/components/app-shell";
 import { StatusBadge } from "@/components/status-badge";
 import { arquivoEhVideo } from "@/lib/midia";
+import {
+  ITEM_REVISAO_STATUS_LABEL,
+  ITEM_REVISAO_STATUS_BADGE_CLASS,
+} from "@/lib/item-revisao-status";
 import { NovoItemRevisaoForm } from "@/components/novo-item-revisao-form";
 import { EnviarRevisaoButton } from "@/components/enviar-revisao-button";
 
@@ -29,6 +33,17 @@ export default async function AgendamentoDetalhePage({
 
   if (!agendamento) notFound();
 
+  const idsNaoVistos = agendamento.itensRevisao
+    .filter((item) => item.status !== "PENDENTE" && !item.vistoOficinaEm)
+    .map((item) => item.id);
+
+  if (idsNaoVistos.length > 0) {
+    await prisma.itemRevisao.updateMany({
+      where: { id: { in: idsNaoVistos } },
+      data: { vistoOficinaEm: new Date() },
+    });
+  }
+
   const dataFormatada = new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "2-digit",
@@ -44,6 +59,14 @@ export default async function AgendamentoDetalhePage({
   const valorTotal = agendamento.itensRevisao.reduce(
     (soma, item) => soma + (item.valor ? Number(item.valor) : 0),
     0,
+  );
+
+  const valorAprovado = agendamento.itensRevisao
+    .filter((item) => item.status === "APROVADO")
+    .reduce((soma, item) => soma + (item.valor ? Number(item.valor) : 0), 0);
+
+  const temDecisao = agendamento.itensRevisao.some(
+    (item) => item.status !== "PENDENTE",
   );
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
@@ -98,6 +121,11 @@ export default async function AgendamentoDetalhePage({
                   </span>
                 )}
               </div>
+              <span
+                className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${ITEM_REVISAO_STATUS_BADGE_CLASS[item.status]}`}
+              >
+                {ITEM_REVISAO_STATUS_LABEL[item.status]}
+              </span>
               {item.midias.length > 0 && (
                 <div className="mt-2 flex gap-2 overflow-x-auto">
                   {item.midias.map((url) =>
@@ -126,44 +154,64 @@ export default async function AgendamentoDetalhePage({
       )}
 
       {agendamento.itensRevisao.length > 0 && (
-        <div className="mb-4 flex items-center justify-between rounded-lg bg-surface-2 px-3 py-2">
-          <span className="text-xs text-ink-muted">Total estimado</span>
-          <span className="text-sm font-medium text-ink">
-            R$ {valorTotal.toFixed(2).replace(".", ",")}
-          </span>
-        </div>
-      )}
-
-      <NovoItemRevisaoForm agendamentoId={agendamento.id} />
-
-      {agendamento.itensRevisao.length > 0 && agendamento.cliente.telefone && (
-        <div className="mt-4">
-          <EnviarRevisaoButton
-            agendamentoId={agendamento.id}
-            telefoneCliente={agendamento.cliente.telefone}
-            nomeCliente={agendamento.cliente.nome}
-            linkPublico={linkPublico}
-            totalItens={agendamento.itensRevisao.length}
-            valorTotal={valorTotal}
-          />
-          {agendamento.revisaoEnviadaEm && (
-            <p className="mt-1 text-center text-[11px] text-ink-faint">
-              Enviado em{" "}
-              {new Intl.DateTimeFormat("pt-BR", {
-                day: "2-digit",
-                month: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-              }).format(agendamento.revisaoEnviadaEm)}
-            </p>
+        <div className="mb-4 space-y-1.5 rounded-lg bg-surface-2 px-3 py-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-ink-muted">Total estimado</span>
+            <span className="text-sm font-medium text-ink">
+              R$ {valorTotal.toFixed(2).replace(".", ",")}
+            </span>
+          </div>
+          {temDecisao && (
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-ink-muted">Total autorizado</span>
+              <span className="text-sm font-medium text-ink">
+                R$ {valorAprovado.toFixed(2).replace(".", ",")}
+              </span>
+            </div>
           )}
         </div>
       )}
 
-      {agendamento.itensRevisao.length > 0 && !agendamento.cliente.telefone && (
-        <p className="mt-4 text-center text-xs text-ink-faint">
-          Cadastre o telefone do cliente pra poder enviar a revisão.
+      {agendamento.status === "CONCLUIDO" ? (
+        <p className="rounded-lg border border-border bg-surface p-3 text-center text-xs text-ink-faint">
+          Atendimento concluído — só consulta, sem edição.
         </p>
+      ) : (
+        <>
+          <NovoItemRevisaoForm agendamentoId={agendamento.id} />
+
+          {agendamento.itensRevisao.length > 0 &&
+            agendamento.cliente.telefone && (
+              <div className="mt-4">
+                <EnviarRevisaoButton
+                  agendamentoId={agendamento.id}
+                  telefoneCliente={agendamento.cliente.telefone}
+                  nomeCliente={agendamento.cliente.nome}
+                  linkPublico={linkPublico}
+                  totalItens={agendamento.itensRevisao.length}
+                  valorTotal={valorTotal}
+                />
+                {agendamento.revisaoEnviadaEm && (
+                  <p className="mt-1 text-center text-[11px] text-ink-faint">
+                    Enviado em{" "}
+                    {new Intl.DateTimeFormat("pt-BR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }).format(agendamento.revisaoEnviadaEm)}
+                  </p>
+                )}
+              </div>
+            )}
+
+          {agendamento.itensRevisao.length > 0 &&
+            !agendamento.cliente.telefone && (
+              <p className="mt-4 text-center text-xs text-ink-faint">
+                Cadastre o telefone do cliente pra poder enviar a revisão.
+              </p>
+            )}
+        </>
       )}
     </AppShell>
   );

@@ -25,7 +25,14 @@ export default async function HojePage() {
       oficinaId: session.user.oficinaId,
       dataHora: { gte: inicio, lte: fim },
     },
-    include: { cliente: true, veiculo: true },
+    include: {
+      cliente: true,
+      veiculo: true,
+      itensRevisao: {
+        where: { status: { not: "PENDENTE" }, vistoOficinaEm: null },
+        select: { id: true },
+      },
+    },
     orderBy: { dataHora: "asc" },
   });
 
@@ -58,7 +65,11 @@ export default async function HojePage() {
       ) : (
         <ul className="space-y-3">
           {agendamentos.map((ag) => (
-            <AgendamentoCard key={ag.id} agendamento={ag} />
+            <AgendamentoCard
+              key={ag.id}
+              agendamento={ag}
+              temNovidade={ag.itensRevisao.length > 0}
+            />
           ))}
         </ul>
       )}

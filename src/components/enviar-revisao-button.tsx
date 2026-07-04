@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { marcarRevisaoEnviada } from "@/app/actions/revisoes";
+import { montarLinkWhatsapp } from "@/lib/whatsapp";
 
 export function EnviarRevisaoButton({
   agendamentoId,
@@ -30,10 +31,7 @@ export function EnviarRevisaoButton({
       `Encontramos ${totalItens} ${totalItens === 1 ? "item" : "itens"} na revisão do seu veículo ` +
       `(total estimado R$ ${valorFormatado}). Veja as fotos e os detalhes aqui: ${linkPublico}`;
 
-    // Assume DDD + número (10/11 dígitos), sem código do país — heurística
-    // simples pra v1, sem normalização formal de telefone ainda.
-    const telefoneLimpo = telefoneCliente.replace(/\D/g, "");
-    const linkWhatsapp = `https://wa.me/55${telefoneLimpo}?text=${encodeURIComponent(mensagem)}`;
+    const linkWhatsapp = montarLinkWhatsapp(telefoneCliente, mensagem);
 
     try {
       await marcarRevisaoEnviada(agendamentoId);
