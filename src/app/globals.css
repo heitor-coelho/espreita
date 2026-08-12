@@ -43,17 +43,37 @@ body {
   font-family: var(--font-sans);
 }
 
-.campo {
-  width: 100%;
-  border-radius: 10px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface-2);
-  color: var(--color-ink);
-  padding: 0.625rem 0.75rem;
-  font-size: 0.875rem;
-}
+/* Em @layer components pra ficar abaixo de @layer utilities na cascata do
+   Tailwind v4 — sem isso, CSS "sem layer" sempre vence sobre CSS "com
+   layer" (não importa a ordem no arquivo), e classes como w-14/flex-1
+   aplicadas num <input class="campo w-14"> nunca conseguiriam sobrescrever
+   o width:100% daqui. */
+@layer components {
+  .campo {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-2);
+    color: var(--color-ink);
+    padding: 0.625rem 0.75rem;
+    font-size: 0.875rem;
+  }
 
-.campo:focus {
-  outline: none;
-  border-color: var(--color-accent);
+  .campo:focus {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+
+  /* Remove as setinhas nativas de input[type=number] — a validação de
+     inteiro/decimal já é feita em JS (src/lib/numero.ts), as setas só
+     destoam do resto da interface. */
+  .campo[type="number"]::-webkit-outer-spin-button,
+  .campo[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .campo[type="number"] {
+    -moz-appearance: textfield;
+  }
 }

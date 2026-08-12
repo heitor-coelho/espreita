@@ -3,14 +3,38 @@
 import { useRef, useState } from "react";
 import { obterUrlDeUpload, criarItemRevisao } from "@/app/actions/revisoes";
 import { arquivoEhVideo } from "@/lib/midia";
+import { apenasDecimal } from "@/lib/numero";
 
-export function NovoItemRevisaoForm({ agendamentoId }: { agendamentoId: string }) {
+type ProdutoOpcao = {
+  id: string;
+  nome: string;
+  precoVenda: string;
+  estoqueQtd: number;
+};
+
+export function NovoItemRevisaoForm({
+  agendamentoId,
+  produtos,
+}: {
+  agendamentoId: string;
+  produtos: ProdutoOpcao[];
+}) {
+  const [produtoId, setProdutoId] = useState("");
   const [descricao, setDescricao] = useState("");
   const [valor, setValor] = useState("");
   const [midias, setMidias] = useState<string[]>([]);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  function handleSelecionarProduto(id: string) {
+    setProdutoId(id);
+    const produto = produtos.find((p) => p.id === id);
+    if (produto) {
+      setDescricao(produto.nome);
+      setValor(produto.precoVenda);
+    }
+  }
 
   async function handleArquivos(e: React.ChangeEvent<HTMLInputElement>) {
     const arquivos = Array.from(e.target.files ?? []);
@@ -49,7 +73,14 @@ export function NovoItemRevisaoForm({ agendamentoId }: { agendamentoId: string }
 
     setEnviando(true);
     try {
-      await criarItemRevisao({ agendamentoId, descricao, valor, midias });
+      await criarItemRevisao({
+        agendamentoId,
+        descricao,
+        valor,
+        midias,
+        produtoId: produtoId || undefined,
+      });
+      setProdutoId("");
       setDescricao("");
       setValor("");
       setMidias([]);
@@ -64,6 +95,36 @@ export function NovoItemRevisaoForm({ agendamentoId }: { agendamentoId: string }
     <div className="rounded-xl border border-border bg-surface p-3">
       <p className="mb-2 text-sm font-medium text-ink">Adicionar item</p>
 
+      {produtos.length > 0 && (
+        <select
+          value={produtoId}
+          onChange={(e) => handleSelecionarProduto(e.target.value)}
+          className="campo mb-2"
+        >
+          <option value="">Peça do estoque (opcional)</option>
+          {produtos.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.nome} · R$ {Number(p.precoVenda).toFixed(2).replace(".", ",")}
+              {" · estoque "}
+              {p.estoqueQtd}
+            </option>
+          ))}
+        </select>
+      )}
+
+      {produtoId && (
+        <p className="mb-2 flex items-center justify-between text-xs text-ink-muted">
+          <span>Vinculado ao estoque — desconta 1 unidade ao concluir</span>
+          <button
+            type="button"
+            onClick={() => setProdutoId("")}
+            className="text-ink-faint underline"
+          >
+            remover vínculo
+          </button>
+        </p>
+      )}
+
       <input
         type="text"
         placeholder="O que foi encontrado? Ex.: Pastilha de freio dianteira"
@@ -76,11 +137,12 @@ export function NovoItemRevisaoForm({ agendamentoId }: { agendamentoId: string }
         <span className="text-xs text-ink-muted">R$</span>
         <input
           type="number"
+          inputMode="decimal"
           step="0.01"
           min="0"
           placeholder="0,00 (opcional)"
           value={valor}
-          onChange={(e) => setValor(e.target.value)}
+          onChange={(e) => setValor(apenasDecimal(e.target.value))}
           className="campo"
         />
       </div>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { criarProduto, atualizarProduto } from "@/app/actions/produtos";
+import { apenasDecimal, apenasInteiro } from "@/lib/numero";
 
 type ProdutoExistente = {
   id: string;
@@ -35,10 +36,20 @@ export function ProdutoForm({ produto }: { produto?: ProdutoExistente }) {
   );
 
   const [salvando, setSalvando] = useState(false);
+  const [salvo, setSalvo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+
+  // "Salvo!" é só um pisca de confirmação — some sozinho pra não ficar
+  // permanente caso o mecânico continue editando a peça.
+  useEffect(() => {
+    if (!salvo) return;
+    const t = setTimeout(() => setSalvo(false), 2000);
+    return () => clearTimeout(t);
+  }, [salvo]);
 
   async function handleSalvar() {
     setErro(null);
+    setSalvo(false);
     setSalvando(true);
 
     const formData = new FormData();
@@ -56,6 +67,8 @@ export function ProdutoForm({ produto }: { produto?: ProdutoExistente }) {
       if (produto) {
         await atualizarProduto(produto.id, formData);
         router.refresh();
+        setSalvando(false);
+        setSalvo(true);
       } else {
         const novo = await criarProduto(formData);
         router.push(`/admin/pecas/${novo.id}`);
@@ -105,20 +118,22 @@ export function ProdutoForm({ produto }: { produto?: ProdutoExistente }) {
         <Campo label="Valor de venda (R$)">
           <input
             type="number"
+            inputMode="decimal"
             step="0.01"
             min="0"
             value={precoVenda}
-            onChange={(e) => setPrecoVenda(e.target.value)}
+            onChange={(e) => setPrecoVenda(apenasDecimal(e.target.value))}
             className="campo"
           />
         </Campo>
         <Campo label="Custo (R$)">
           <input
             type="number"
+            inputMode="decimal"
             step="0.01"
             min="0"
             value={custo}
-            onChange={(e) => setCusto(e.target.value)}
+            onChange={(e) => setCusto(apenasDecimal(e.target.value))}
             className="campo"
           />
         </Campo>
@@ -128,20 +143,22 @@ export function ProdutoForm({ produto }: { produto?: ProdutoExistente }) {
         <Campo label="Estoque atual">
           <input
             type="number"
+            inputMode="numeric"
             step="1"
             min="0"
             value={estoqueQtd}
-            onChange={(e) => setEstoqueQtd(e.target.value)}
+            onChange={(e) => setEstoqueQtd(apenasInteiro(e.target.value))}
             className="campo"
           />
         </Campo>
         <Campo label="Estoque mínimo">
           <input
             type="number"
+            inputMode="numeric"
             step="1"
             min="0"
             value={estoqueMinimo}
-            onChange={(e) => setEstoqueMinimo(e.target.value)}
+            onChange={(e) => setEstoqueMinimo(apenasInteiro(e.target.value))}
             className="campo"
           />
         </Campo>
@@ -156,12 +173,13 @@ export function ProdutoForm({ produto }: { produto?: ProdutoExistente }) {
       </div>
 
       {erro && <p className="text-xs text-danger-ink">{erro}</p>}
+      {salvo && <p className="text-xs text-badge-concluido-ink">Peça salva.</p>}
 
       <button
         type="button"
         onClick={handleSalvar}
         disabled={salvando || !nome.trim() || !precoVenda}
-        className="w-full rounded-lg bg-accent py-3 text-sm font-semibold text-white disabled:opacity-50"
+        className="w-full rounded-lg bg-accent py-3 text-sm font-semibold text-white transition-opacity disabled:opacity-50"
       >
         {salvando ? "Salvando..." : "Salvar peça"}
       </button>

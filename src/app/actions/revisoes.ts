@@ -17,6 +17,7 @@ export async function criarItemRevisao(dados: {
   descricao: string;
   valor?: string;
   midias: string[];
+  produtoId?: string;
 }) {
   const session = await auth();
   if (!session?.user) throw new Error("Não autenticado.");
@@ -36,10 +37,23 @@ export async function criarItemRevisao(dados: {
   const valor =
     dados.valor && dados.valor.trim() !== "" ? Number(dados.valor) : null;
 
+  // Vínculo com o catálogo de peças é opcional — texto livre continua
+  // funcionando pra serviço/mão de obra sem controle de estoque.
+  let produtoId: string | null = null;
+  if (dados.produtoId) {
+    const produto = await prisma.produto.findFirst({
+      where: { id: dados.produtoId, oficinaId: session.user.oficinaId },
+      select: { id: true },
+    });
+    if (!produto) throw new Error("Peça não encontrada.");
+    produtoId = produto.id;
+  }
+
   await prisma.itemRevisao.create({
     data: {
       oficinaId: session.user.oficinaId,
       agendamentoId: dados.agendamentoId,
+      produtoId,
       descricao,
       valor,
       midias: dados.midias,

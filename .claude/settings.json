@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sudo -n true)",
+      "Bash(ldd /home/hhh-hhh-hhh/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell)",
+      "Read(//usr/lib/**)",
+      "Bash(dpkg --print-architecture)",
+      "Bash(apt list *)",
+      "Bash(apt-cache search *)",
+      "Bash(apt-get update *)",
+      "Bash(apt-cache show *)",
+      "Bash(apt-get download *)",
+      "Bash(export LD_LIBRARY_PATH=/tmp/claude-1000/-home-hhh-hhh-hhh-projects-espreita/70473f33-1ec9-4154-a61b-80d4607de782/scratchpad/pwtest/debs/extracted/usr/lib/x86_64-linux-gnu)",
+      "Bash(node test.js)",
+      "Bash(node venda-shots.js)",
+      "Bash(node test2.js)",
+      "Bash(node debug3.js)",
+      "Bash(kill 24073 24074 24086)",
+      "Bash(node test3-fase3.js)",
+      "WebFetch(domain:grupoarconect.com.br)",
+      "WebSearch",
+      "WebFetch(domain:oficinaconect.com.br)",
+      "WebFetch(domain:oficina.app)",
+      "Bash(node -e *)",
+      "Bash(kill 50457 50458 50470)",
+      "Bash(node test4-pix.js)",
+      "Bash(node test5-agenda-pix.js)"
+    ]
+  }
+}

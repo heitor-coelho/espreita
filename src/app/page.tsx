@@ -20,24 +20,30 @@ export default async function HojePage() {
 
   const { inicio, fim } = inicioFimDoDia(new Date());
 
-  const agendamentos = await prisma.agendamento.findMany({
-    where: {
-      oficinaId: session.user.oficinaId,
-      OR: [
-        { dataHora: { gte: inicio, lte: fim } },
-        { status: "EM_ATENDIMENTO" },
-      ],
-    },
-    include: {
-      cliente: true,
-      veiculo: true,
-      itensRevisao: {
-        where: { status: { not: "PENDENTE" }, vistoOficinaEm: null },
-        select: { id: true },
+  const [agendamentos, oficina] = await Promise.all([
+    prisma.agendamento.findMany({
+      where: {
+        oficinaId: session.user.oficinaId,
+        OR: [
+          { dataHora: { gte: inicio, lte: fim } },
+          { status: "EM_ATENDIMENTO" },
+        ],
       },
-    },
-    orderBy: { dataHora: "asc" },
-  });
+      include: {
+        cliente: true,
+        veiculo: true,
+        itensRevisao: {
+          where: { status: { not: "PENDENTE" }, vistoOficinaEm: null },
+          select: { id: true },
+        },
+      },
+      orderBy: { dataHora: "asc" },
+    }),
+    prisma.oficina.findUniqueOrThrow({
+      where: { id: session.user.oficinaId },
+      select: { nome: true, cidade: true, chavePix: true },
+    }),
+  ]);
 
   const hojeFormatado = new Intl.DateTimeFormat("pt-BR", {
     weekday: "long",
@@ -72,6 +78,9 @@ export default async function HojePage() {
               key={ag.id}
               agendamento={ag}
               temNovidade={ag.itensRevisao.length > 0}
+              chavePixOficina={oficina.chavePix}
+              nomeOficina={oficina.nome}
+              cidadeOficina={oficina.cidade}
             />
           ))}
         </ul>

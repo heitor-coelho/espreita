@@ -47,24 +47,30 @@ export default async function AgendaPage({
         ? chaveHoje
         : chavesDaSemana[0];
 
-  const agendamentos = await prisma.agendamento.findMany({
-    where: {
-      oficinaId: session.user.oficinaId,
-      OR: [
-        { dataHora: { gte: inicioSemana, lte: fimSemana } },
-        ...(semanaExibeHoje ? [{ status: "EM_ATENDIMENTO" as const }] : []),
-      ],
-    },
-    include: {
-      cliente: true,
-      veiculo: true,
-      itensRevisao: {
-        where: { status: { not: "PENDENTE" }, vistoOficinaEm: null },
-        select: { id: true },
+  const [agendamentos, oficina] = await Promise.all([
+    prisma.agendamento.findMany({
+      where: {
+        oficinaId: session.user.oficinaId,
+        OR: [
+          { dataHora: { gte: inicioSemana, lte: fimSemana } },
+          ...(semanaExibeHoje ? [{ status: "EM_ATENDIMENTO" as const }] : []),
+        ],
       },
-    },
-    orderBy: { dataHora: "asc" },
-  });
+      include: {
+        cliente: true,
+        veiculo: true,
+        itensRevisao: {
+          where: { status: { not: "PENDENTE" }, vistoOficinaEm: null },
+          select: { id: true },
+        },
+      },
+      orderBy: { dataHora: "asc" },
+    }),
+    prisma.oficina.findUniqueOrThrow({
+      where: { id: session.user.oficinaId },
+      select: { nome: true, cidade: true, chavePix: true },
+    }),
+  ]);
 
   const porDia = new Map<string, typeof agendamentos>();
   for (const ag of agendamentos) {
@@ -157,6 +163,9 @@ export default async function AgendaPage({
                 agendamento={ag}
                 temNovidade={ag.itensRevisao.length > 0}
                 clicavel
+                chavePixOficina={oficina.chavePix}
+                nomeOficina={oficina.nome}
+                cidadeOficina={oficina.cidade}
               />
             ))}
           </ul>
@@ -190,6 +199,9 @@ export default async function AgendaPage({
                       compact
                       temNovidade={ag.itensRevisao.length > 0}
                       clicavel
+                      chavePixOficina={oficina.chavePix}
+                      nomeOficina={oficina.nome}
+                      cidadeOficina={oficina.cidade}
                     />
                   ))
                 )}

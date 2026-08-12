@@ -22,14 +22,24 @@ export default async function AgendamentoDetalhePage({
 
   const { id } = await params;
 
-  const agendamento = await prisma.agendamento.findFirst({
-    where: { id, oficinaId: session.user.oficinaId },
-    include: {
-      cliente: true,
-      veiculo: true,
-      itensRevisao: { orderBy: { criadoEm: "asc" } },
-    },
-  });
+  const [agendamento, produtos] = await Promise.all([
+    prisma.agendamento.findFirst({
+      where: { id, oficinaId: session.user.oficinaId },
+      include: {
+        cliente: true,
+        veiculo: true,
+        itensRevisao: {
+          include: { produto: { select: { nome: true } } },
+          orderBy: { criadoEm: "asc" },
+        },
+      },
+    }),
+    prisma.produto.findMany({
+      where: { oficinaId: session.user.oficinaId, ativo: true },
+      select: { id: true, nome: true, precoVenda: true, estoqueQtd: true },
+      orderBy: { nome: "asc" },
+    }),
+  ]);
 
   if (!agendamento) notFound();
 
@@ -143,6 +153,11 @@ export default async function AgendamentoDetalhePage({
               >
                 {ITEM_REVISAO_STATUS_LABEL[item.status]}
               </span>
+              {item.produto && (
+                <span className="ml-1.5 mt-1.5 inline-block rounded-full bg-surface-2 px-2 py-0.5 text-[10px] font-medium text-ink-faint">
+                  Estoque: {item.produto.nome}
+                </span>
+              )}
               {item.midias.length > 0 && (
                 <div className="mt-2 flex gap-2 overflow-x-auto">
                   {item.midias.map((url) =>
@@ -195,7 +210,13 @@ export default async function AgendamentoDetalhePage({
         </p>
       ) : (
         <>
-          <NovoItemRevisaoForm agendamentoId={agendamento.id} />
+          <NovoItemRevisaoForm
+            agendamentoId={agendamento.id}
+            produtos={produtos.map((p) => ({
+              ...p,
+              precoVenda: p.precoVenda.toString(),
+            }))}
+          />
 
           {agendamento.itensRevisao.length > 0 &&
             agendamento.cliente.telefone && (

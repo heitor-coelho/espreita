@@ -4,6 +4,19 @@
  * resto do app (ex.: inicioFimDoDia na tela Hoje).
  */
 
+export function inicioDoDia(data: Date): Date {
+  const d = new Date(data);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+export function inicioDoMes(data: Date): Date {
+  const d = new Date(data);
+  d.setDate(1);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 export function inicioDaSemana(data: Date): Date {
   const d = new Date(data);
   d.setHours(0, 0, 0, 0);

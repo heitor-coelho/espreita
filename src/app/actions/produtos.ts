@@ -71,7 +71,12 @@ export async function criarProduto(formData: FormData) {
     });
 
     revalidatePath("/admin/pecas");
-    return produto;
+    // Retorna só o id, não o produto inteiro: campos Decimal (precoVenda,
+    // custo) não são serializáveis na resposta de uma Server Action pro
+    // Client Component — devolver o objeto do Prisma direto trava a
+    // promise no client sem erro visível (botão fica "Salvando..." pra
+    // sempre).
+    return { id: produto.id };
   } catch (erro) {
     if (erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === "P2002") {
       throw new Error("Já existe uma peça com esse código.");

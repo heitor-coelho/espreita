@@ -17,6 +17,7 @@ model Oficina {
   telefone  String?
   cidade    String?
   estado    String?
+  chavePix  String?
   criadoEm  DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
@@ -151,7 +152,8 @@ model Produto {
   criadoEm      DateTime @default(now())
   atualizadoEm  DateTime @updatedAt
 
-  itensVenda ItemVenda[]
+  itensVenda   ItemVenda[]
+  itensRevisao ItemRevisao[]
 
   @@unique([oficinaId, codigo])
   @@index([oficinaId])
@@ -192,9 +194,14 @@ model ItemVenda {
 // ---------------------------------------------------------------------------
 // Revisão: durante o atendimento, o mecânico registra os itens encontrados
 // (peça/serviço necessário) com foto/vídeo de evidência e valor estimado.
-// Não tem FK pra Produto ainda (valor manual) — isso entra quando a Loja
-// existir. O envio pro cliente é feito via link do WhatsApp (ver /r/[id]),
-// sem chat dentro do app.
+// O envio pro cliente é feito via link do WhatsApp (ver /r/[id]), sem chat
+// dentro do app.
+//
+// `produtoId` é opcional: liga o item a uma peça do catálogo (Loja) quando
+// fizer sentido, mas texto livre continua existindo pra serviço/mão de obra
+// sem controle de estoque. Quando o item aprovado pelo cliente tem produto
+// vinculado, `concluirAtendimento` (src/app/actions/agendamentos.ts) gera
+// automaticamente uma Venda com desconto de estoque.
 // ---------------------------------------------------------------------------
 
 enum StatusItemRevisao {
@@ -209,6 +216,8 @@ model ItemRevisao {
   oficina       Oficina           @relation(fields: [oficinaId], references: [id], onDelete: Cascade)
   agendamentoId String
   agendamento   Agendamento       @relation(fields: [agendamentoId], references: [id], onDelete: Cascade)
+  produtoId     String?
+  produto       Produto?          @relation(fields: [produtoId], references: [id], onDelete: SetNull)
   descricao     String
   valor         Decimal?          @db.Decimal(10, 2)
   midias        String[]          @default([])
@@ -219,6 +228,7 @@ model ItemRevisao {
 
   @@index([oficinaId])
   @@index([agendamentoId])
+  @@index([produtoId])
   @@map("itens_revisao")
 }
 

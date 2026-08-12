@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Package } from "lucide-react";
+import { Package, QrCode } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { exigirDono } from "@/lib/autorizacao";
 
@@ -22,6 +22,17 @@ export default async function AdminPage() {
         <div>
           <p className="text-sm font-medium text-ink">Peças</p>
           <p className="text-xs text-ink-muted">Estoque, preços e custos</p>
+        </div>
+      </Link>
+
+      <Link
+        href="/admin/pix"
+        className="mt-2 flex items-center gap-3 rounded-xl border border-border bg-surface p-3"
+      >
+        <QrCode size={20} strokeWidth={1.75} className="text-ink-muted" />
+        <div>
+          <p className="text-sm font-medium text-ink">Cobrança via Pix</p>
+          <p className="text-xs text-ink-muted">Chave Pix da oficina</p>
         </div>
       </Link>
     </AppShell>

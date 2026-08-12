@@ -3,15 +3,22 @@
 import { useState, useTransition } from "react";
 import { concluirAtendimento } from "@/app/actions/agendamentos";
 import { montarLinkWhatsapp } from "@/lib/whatsapp";
+import { gerarCodigoPix } from "@/lib/pix";
 
 export function ConcluirAtendimentoForm({
   agendamentoId,
   nomeCliente,
   telefoneCliente,
+  chavePixOficina = null,
+  nomeOficina = "",
+  cidadeOficina = null,
 }: {
   agendamentoId: string;
   nomeCliente: string;
   telefoneCliente: string | null;
+  chavePixOficina?: string | null;
+  nomeOficina?: string;
+  cidadeOficina?: string | null;
 }) {
   const [valor, setValor] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -29,9 +36,24 @@ export function ConcluirAtendimentoForm({
       if (telefoneCliente) {
         const primeiroNome = nomeCliente.split(" ")[0];
         const valorFormatado = Number(valor).toFixed(2).replace(".", ",");
-        const mensagem =
+        let mensagem =
           `Olá, ${primeiroNome}! Aqui é da oficina. Seu veículo está pronto ` +
           `pra retirada. Total: R$ ${valorFormatado}`;
+
+        // Chave Pix configurada em /admin/pix — anexa o código "copia e
+        // cola" direto na mensagem, sem precisar de QR (não dá pra
+        // escanear dentro do próprio chat).
+        if (chavePixOficina) {
+          const codigoPix = gerarCodigoPix({
+            chave: chavePixOficina,
+            nomeRecebedor: nomeOficina,
+            cidade: cidadeOficina,
+            valor: Number(valor),
+            identificador: agendamentoId,
+          });
+          mensagem += `\n\nPix copia e cola:\n${codigoPix}`;
+        }
+
         window.open(montarLinkWhatsapp(telefoneCliente, mensagem), "_blank");
       }
     });

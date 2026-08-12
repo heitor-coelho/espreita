@@ -20,6 +20,9 @@ type AgendamentoCardProps = {
   compact?: boolean;
   temNovidade?: boolean;
   clicavel?: boolean;
+  chavePixOficina?: string | null;
+  nomeOficina?: string;
+  cidadeOficina?: string | null;
 };
 
 export function AgendamentoCard({
@@ -27,6 +30,9 @@ export function AgendamentoCard({
   compact = false,
   temNovidade = false,
   clicavel = false,
+  chavePixOficina = null,
+  nomeOficina = "",
+  cidadeOficina = null,
 }: AgendamentoCardProps) {
   const hora = new Intl.DateTimeFormat("pt-BR", {
     hour: "2-digit",
@@ -99,6 +105,9 @@ export function AgendamentoCard({
               agendamentoId={ag.id}
               nomeCliente={ag.cliente.nome}
               telefoneCliente={ag.cliente.telefone}
+              chavePixOficina={chavePixOficina}
+              nomeOficina={nomeOficina}
+              cidadeOficina={cidadeOficina}
             />
           )}
         </div>
