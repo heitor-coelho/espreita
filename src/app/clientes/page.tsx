@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Search, Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { AppShell } from "@/components/app-shell";
+import { exigirDono } from "@/lib/autorizacao";
 
 export default async function ClientesPage({
   searchParams,
@@ -12,6 +13,7 @@ export default async function ClientesPage({
 }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  exigirDono(session.user.papel);
 
   const { busca } = await searchParams;
   const termo = busca?.trim();
@@ -41,7 +43,7 @@ export default async function ClientesPage({
   });
 
   return (
-    <AppShell oficinaNome={session.user.oficinaNome}>
+    <AppShell oficinaNome={session.user.oficinaNome} papel={session.user.papel}>
       <div className="mb-4 flex items-center justify-between gap-2">
         <h1 className="text-lg font-medium text-ink">Clientes</h1>
         <Link

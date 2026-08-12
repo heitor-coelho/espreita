@@ -11,7 +11,7 @@ export default async function NovoAgendamentoPage() {
   const hoje = new Date().toISOString().slice(0, 10);
 
   return (
-    <AppShell oficinaNome={session.user.oficinaNome}>
+    <AppShell oficinaNome={session.user.oficinaNome} papel={session.user.papel}>
       <h1 className="mb-4 text-lg font-medium text-ink">Novo agendamento</h1>
 
       <form action={criarAgendamento} className="space-y-4">

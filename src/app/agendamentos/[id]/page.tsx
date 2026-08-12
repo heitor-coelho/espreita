@@ -73,7 +73,7 @@ export default async function AgendamentoDetalhePage({
   const linkPublico = `${baseUrl}/r/${agendamento.id}`;
 
   return (
-    <AppShell oficinaNome={session.user.oficinaNome}>
+    <AppShell oficinaNome={session.user.oficinaNome} papel={session.user.papel}>
       <Link href="/agenda" className="text-xs text-ink-faint">
         ← Voltar pra agenda
       </Link>

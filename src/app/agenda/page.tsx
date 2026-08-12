@@ -83,7 +83,7 @@ export default async function AgendaPage({
   const listaSelecionada = porDia.get(chaveSelecionada) ?? [];
 
   return (
-    <AppShell oficinaNome={session.user.oficinaNome}>
+    <AppShell oficinaNome={session.user.oficinaNome} papel={session.user.papel}>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-lg font-medium text-ink">Agenda</h1>
         <div className="flex items-center gap-1 text-ink-muted">

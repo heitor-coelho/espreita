@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { TipoVeiculo } from "@prisma/client";
+import { exigirDono } from "@/lib/autorizacao";
 
 function semVazio(valor: FormDataEntryValue | null) {
   if (typeof valor !== "string") return undefined;
@@ -21,6 +22,7 @@ const schemaCliente = z.object({
 export async function criarCliente(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  exigirDono(session.user.papel);
 
   const dados = schemaCliente.parse({
     nome: formData.get("nome"),
@@ -51,6 +53,7 @@ export async function salvarVeiculo(dados: {
 }) {
   const session = await auth();
   if (!session?.user) throw new Error("Não autenticado.");
+  exigirDono(session.user.papel);
 
   const cliente = await prisma.cliente.findFirst({
     where: { id: dados.clienteId, oficinaId: session.user.oficinaId },

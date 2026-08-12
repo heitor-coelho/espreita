@@ -4,13 +4,15 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { criarCliente } from "@/app/actions/clientes";
+import { exigirDono } from "@/lib/autorizacao";
 
 export default async function NovoClientePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  exigirDono(session.user.papel);
 
   return (
-    <AppShell oficinaNome={session.user.oficinaNome}>
+    <AppShell oficinaNome={session.user.oficinaNome} papel={session.user.papel}>
       <Link href="/clientes" className="text-xs text-ink-faint">
         ← Voltar pra clientes
       </Link>

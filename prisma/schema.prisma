@@ -135,19 +135,25 @@ model Agendamento {
 }
 
 model Produto {
-  id          String   @id @default(cuid())
-  oficinaId   String
-  oficina     Oficina  @relation(fields: [oficinaId], references: [id], onDelete: Cascade)
-  nome        String
-  categoria   String?
-  precoVenda  Decimal  @db.Decimal(10, 2)
-  custo       Decimal? @db.Decimal(10, 2)
-  estoqueQtd  Int      @default(0)
-  criadoEm    DateTime @default(now())
-  atualizadoEm DateTime @updatedAt
+  id            String   @id @default(cuid())
+  oficinaId     String
+  oficina       Oficina  @relation(fields: [oficinaId], references: [id], onDelete: Cascade)
+  nome          String
+  descricao     String?
+  codigo        String?
+  categoria     String?
+  precoVenda    Decimal  @db.Decimal(10, 2)
+  custo         Decimal? @db.Decimal(10, 2)
+  estoqueQtd    Int      @default(0)
+  estoqueMinimo Int      @default(0)
+  unidade       String?
+  ativo         Boolean  @default(true)
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
 
   itensVenda ItemVenda[]
 
+  @@unique([oficinaId, codigo])
   @@index([oficinaId])
   @@map("produtos")
 }

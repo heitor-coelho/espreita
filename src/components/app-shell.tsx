@@ -1,15 +1,19 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { signOut } from "@/auth";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { BottomNav } from "./bottom-nav";
 import { NotificacoesToggle } from "./notificacoes-toggle";
+import type { Papel } from "@/types/next-auth";
 
 export function AppShell({
   oficinaNome,
+  papel,
   children,
 }: {
   oficinaNome: string;
+  papel: Papel;
   children: ReactNode;
 }) {
   return (
@@ -27,6 +31,16 @@ export function AppShell({
             {oficinaNome}
           </span>
           <div className="flex items-center gap-3">
+            {papel === "DONO" && (
+              <Link
+                href="/admin"
+                aria-label="Administração"
+                title="Administração"
+                className="text-ink-faint"
+              >
+                <Settings size={18} strokeWidth={1.75} />
+              </Link>
+            )}
             <NotificacoesToggle />
             <form
               action={async () => {
@@ -50,7 +64,7 @@ export function AppShell({
         {children}
       </main>
 
-      <BottomNav />
+      <BottomNav papel={papel} />
     </div>
   );
 }

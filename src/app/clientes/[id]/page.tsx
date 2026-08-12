@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { AppShell } from "@/components/app-shell";
 import { StatusBadge } from "@/components/status-badge";
 import { EditarVeiculoToggle, NovoVeiculoToggle } from "@/components/veiculo-form";
+import { exigirDono } from "@/lib/autorizacao";
 
 export default async function ClienteDetalhePage({
   params,
@@ -14,6 +15,7 @@ export default async function ClienteDetalhePage({
 }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  exigirDono(session.user.papel);
 
   const { id } = await params;
 
@@ -35,7 +37,7 @@ export default async function ClienteDetalhePage({
     : null;
 
   return (
-    <AppShell oficinaNome={session.user.oficinaNome}>
+    <AppShell oficinaNome={session.user.oficinaNome} papel={session.user.papel}>
       <Link href="/clientes" className="text-xs text-ink-faint">
         ← Voltar pra clientes
       </Link>

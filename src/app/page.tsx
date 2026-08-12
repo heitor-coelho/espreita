@@ -43,7 +43,7 @@ export default async function HojePage() {
   }).format(new Date());
 
   return (
-    <AppShell oficinaNome={session.user.oficinaNome}>
+    <AppShell oficinaNome={session.user.oficinaNome} papel={session.user.papel}>
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-lg font-medium text-ink">Hoje</h1>
