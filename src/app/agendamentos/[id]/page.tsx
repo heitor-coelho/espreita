@@ -100,6 +100,23 @@ export default async function AgendamentoDetalhePage({
         </p>
       )}
 
+      {(agendamento.servicoRealizado || agendamento.valor !== null) && (
+        <div className="mb-4 rounded-lg border border-border bg-surface p-3 text-xs text-ink-muted">
+          {agendamento.servicoRealizado && (
+            <p>
+              <span className="font-medium text-ink">Serviço realizado: </span>
+              {agendamento.servicoRealizado}
+            </p>
+          )}
+          {agendamento.valor !== null && (
+            <p className={agendamento.servicoRealizado ? "mt-1" : ""}>
+              <span className="font-medium text-ink">Valor cobrado: </span>
+              R$ {Number(agendamento.valor).toFixed(2).replace(".", ",")}
+            </p>
+          )}
+        </div>
+      )}
+
       <h2 className="mb-2 text-sm font-medium text-ink">Itens da revisão</h2>
 
       {agendamento.itensRevisao.length === 0 ? (

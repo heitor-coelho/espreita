@@ -38,6 +38,7 @@ export default async function AgendaPage({
 
   const chaveHoje = paraChaveDia(hoje);
   const chavesDaSemana = dias.map((d) => paraChaveDia(d));
+  const semanaExibeHoje = chavesDaSemana.includes(chaveHoje);
 
   const chaveSelecionada =
     params.dia && chavesDaSemana.includes(params.dia)
@@ -49,7 +50,10 @@ export default async function AgendaPage({
   const agendamentos = await prisma.agendamento.findMany({
     where: {
       oficinaId: session.user.oficinaId,
-      dataHora: { gte: inicioSemana, lte: fimSemana },
+      OR: [
+        { dataHora: { gte: inicioSemana, lte: fimSemana } },
+        ...(semanaExibeHoje ? [{ status: "EM_ATENDIMENTO" as const }] : []),
+      ],
     },
     include: {
       cliente: true,
@@ -64,7 +68,10 @@ export default async function AgendaPage({
 
   const porDia = new Map<string, typeof agendamentos>();
   for (const ag of agendamentos) {
-    const chave = paraChaveDia(ag.dataHora);
+    // O atendimento mantém sua data de entrada no banco, mas fica visível
+    // no dia atual até ser concluído.
+    const chave =
+      ag.status === "EM_ATENDIMENTO" ? chaveHoje : paraChaveDia(ag.dataHora);
     porDia.set(chave, [...(porDia.get(chave) ?? []), ag]);
   }
 
@@ -149,6 +156,7 @@ export default async function AgendaPage({
                 key={ag.id}
                 agendamento={ag}
                 temNovidade={ag.itensRevisao.length > 0}
+                clicavel
               />
             ))}
           </ul>
@@ -181,6 +189,7 @@ export default async function AgendaPage({
                       agendamento={ag}
                       compact
                       temNovidade={ag.itensRevisao.length > 0}
+                      clicavel
                     />
                   ))
                 )}

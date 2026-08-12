@@ -5,8 +5,12 @@ import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 import { hashPassword } from "../src/lib/password";
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) throw new Error("DATABASE_URL não foi configurada.");
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString }),
+});
 
 async function perguntar(
   rl: ReturnType<typeof createInterface>,

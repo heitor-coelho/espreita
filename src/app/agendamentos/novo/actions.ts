@@ -84,5 +84,6 @@ export async function criarAgendamento(formData: FormData) {
   });
 
   revalidatePath("/");
+  revalidatePath("/agenda");
   redirect("/");
 }

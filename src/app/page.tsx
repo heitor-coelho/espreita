@@ -23,7 +23,10 @@ export default async function HojePage() {
   const agendamentos = await prisma.agendamento.findMany({
     where: {
       oficinaId: session.user.oficinaId,
-      dataHora: { gte: inicio, lte: fim },
+      OR: [
+        { dataHora: { gte: inicio, lte: fim } },
+        { status: "EM_ATENDIMENTO" },
+      ],
     },
     include: {
       cliente: true,
