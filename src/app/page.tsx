@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { AppShell } from "@/components/app-shell";
 import { AgendamentoCard } from "@/components/agendamento-card";
+import { FilaAgendamentos } from "@/components/fila-agendamentos";
 
 function inicioFimDoDia(data: Date) {
   const inicio = new Date(data);
@@ -37,13 +38,19 @@ export default async function HojePage() {
           select: { id: true },
         },
       },
-      orderBy: { dataHora: "asc" },
+      orderBy: [{ ordemFila: "asc" }, { dataHora: "asc" }],
     }),
     prisma.oficina.findUniqueOrThrow({
       where: { id: session.user.oficinaId },
       select: { nome: true, cidade: true, chavePix: true },
     }),
   ]);
+
+  const emAtendimento = agendamentos.filter((ag) => ag.status === "EM_ATENDIMENTO");
+  const fila = agendamentos
+    .filter((ag) => ag.status === "AGENDADO")
+    .map((ag) => ({ ...ag, temNovidade: ag.itensRevisao.length > 0 }));
+  const concluidosHoje = agendamentos.filter((ag) => ag.status === "CONCLUIDO");
 
   const hojeFormatado = new Intl.DateTimeFormat("pt-BR", {
     weekday: "long",
@@ -72,18 +79,43 @@ export default async function HojePage() {
           Nenhum agendamento para hoje. Toque no + para criar o primeiro.
         </p>
       ) : (
-        <ul className="space-y-3">
-          {agendamentos.map((ag) => (
-            <AgendamentoCard
-              key={ag.id}
-              agendamento={ag}
-              temNovidade={ag.itensRevisao.length > 0}
-              chavePixOficina={oficina.chavePix}
-              nomeOficina={oficina.nome}
-              cidadeOficina={oficina.cidade}
-            />
-          ))}
-        </ul>
+        <div className="space-y-5">
+          {emAtendimento.length > 0 && (
+            <div>
+              <h2 className="mb-2 text-sm font-medium text-ink">Em atendimento</h2>
+              <ul className="space-y-3">
+                {emAtendimento.map((ag) => (
+                  <AgendamentoCard
+                    key={ag.id}
+                    agendamento={ag}
+                    temNovidade={ag.itensRevisao.length > 0}
+                    chavePixOficina={oficina.chavePix}
+                    nomeOficina={oficina.nome}
+                    cidadeOficina={oficina.cidade}
+                  />
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <FilaAgendamentos
+            agendamentos={fila}
+            chavePixOficina={oficina.chavePix}
+            nomeOficina={oficina.nome}
+            cidadeOficina={oficina.cidade}
+          />
+
+          {concluidosHoje.length > 0 && (
+            <div>
+              <h2 className="mb-2 text-sm font-medium text-ink">Concluídos hoje</h2>
+              <ul className="space-y-3">
+                {concluidosHoje.map((ag) => (
+                  <AgendamentoCard key={ag.id} agendamento={ag} compact />
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       )}
     </AppShell>
   );

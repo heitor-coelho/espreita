@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { login } from "./actions";
 
 export default async function LoginPage({
@@ -72,6 +73,13 @@ export default async function LoginPage({
         >
           Entrar
         </button>
+
+        <p className="text-center text-xs text-ink-faint">
+          Ainda não tem oficina cadastrada?{" "}
+          <Link href="/cadastro" className="text-accent-strong">
+            Criar conta
+          </Link>
+        </p>
       </form>
     </main>
   );

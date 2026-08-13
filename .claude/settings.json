@@ -24,7 +24,17 @@
       "Bash(node -e *)",
       "Bash(kill 50457 50458 50470)",
       "Bash(node test4-pix.js)",
-      "Bash(node test5-agenda-pix.js)"
+      "Bash(node test5-agenda-pix.js)",
+      "Bash(grep -n \"AgendamentoCard\\\\s*$\\\\|<AgendamentoCard\" src/components/fila-agendamentos.tsx)",
+      "Bash(python3 -)",
+      "Bash(kill 57311 57312 57324)",
+      "Bash(timeout 60 node test6-fila.js)",
+      "Bash(export LD_LIBRARY_PATH=/tmp/claude-1000/-home-hhh-hhh-hhh-projects-espreita/70473f33-1ec9-4154-a61b-80d4607de782/scratchpad/pwtest/debs/extracted/usr/lib/x86_64-invalid)",
+      "Bash(kill 62980 62981 64087)",
+      "Bash(grep -v \"caret-color\\\\|hydrat\\\\|react.dev\\\\|^$\\\\|^-\\\\|^ \\\\|SegmentView\\\\|Boundary\\\\|LayoutRouter\\\\|InnerLayout\\\\|<AppShell\\\\|<div\\\\|<header\\\\|<main\\\\|<ul\\\\|<li\\\\|<Fila\\\\|<Agenda\\\\|<Resumo\\\\|<form\\\\|<input\\\\|Trie\\\\|HojePage\")",
+      "Bash(node verificar-seed.js)",
+      "Bash(kill 64634 64635 64647)",
+      "Bash(node verificar-vendas-v2.js)"
     ]
   }
 }

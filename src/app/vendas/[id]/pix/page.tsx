@@ -7,6 +7,11 @@ import { AppShell } from "@/components/app-shell";
 import { exigirDono } from "@/lib/autorizacao";
 import { gerarCodigoPix } from "@/lib/pix";
 import { CopiarCodigoPix } from "@/components/copiar-codigo-pix";
+import { MarcarPagoButton } from "@/components/marcar-pago-button";
+import {
+  PAGAMENTO_STATUS_LABEL,
+  PAGAMENTO_STATUS_BADGE_CLASS,
+} from "@/lib/pagamento-status";
 
 export default async function VendaPixPage({
   params,
@@ -22,7 +27,12 @@ export default async function VendaPixPage({
   const [venda, oficina] = await Promise.all([
     prisma.venda.findFirst({
       where: { id, oficinaId: session.user.oficinaId },
-      select: { id: true, valorTotal: true, cliente: { select: { nome: true } } },
+      select: {
+        id: true,
+        valorTotal: true,
+        status: true,
+        cliente: { select: { nome: true } },
+      },
     }),
     prisma.oficina.findUniqueOrThrow({
       where: { id: session.user.oficinaId },
@@ -33,6 +43,28 @@ export default async function VendaPixPage({
   if (!venda) notFound();
 
   const valor = Number(venda.valorTotal);
+
+  if (venda.status !== "PENDENTE") {
+    return (
+      <AppShell oficinaNome={session.user.oficinaNome} papel={session.user.papel}>
+        <Link href="/vendas" className="text-xs text-ink-faint">
+          ← Voltar pras vendas
+        </Link>
+        <div className="mt-4 rounded-lg border border-border bg-surface p-4 text-center">
+          <span
+            className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${PAGAMENTO_STATUS_BADGE_CLASS[venda.status]}`}
+          >
+            {PAGAMENTO_STATUS_LABEL[venda.status]}
+          </span>
+          <p className="mt-2 text-sm text-ink-muted">
+            {venda.status === "PAGO"
+              ? "Essa venda já foi paga, não precisa cobrar de novo."
+              : "Essa venda foi cancelada."}
+          </p>
+        </div>
+      </AppShell>
+    );
+  }
 
   if (!oficina.chavePix) {
     return (
@@ -85,6 +117,10 @@ export default async function VendaPixPage({
       </p>
 
       <CopiarCodigoPix codigo={codigoPix} />
+
+      <div className="mt-3">
+        <MarcarPagoButton vendaId={venda.id} />
+      </div>
     </AppShell>
   );
 }

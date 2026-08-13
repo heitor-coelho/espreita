@@ -110,3 +110,34 @@ export async function registrarVenda(formData: FormData) {
   // promise no client sem erro visível (mesmo problema de produtos.ts).
   return { id: vendaId };
 }
+
+export async function marcarVendaPaga(id: string) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Não autenticado.");
+  exigirDono(session.user.papel);
+
+  await prisma.venda.updateMany({
+    where: { id, oficinaId: session.user.oficinaId, status: "PENDENTE" },
+    data: { status: "PAGO", pagoEm: new Date() },
+  });
+
+  revalidatePath("/vendas");
+}
+
+export async function cancelarVenda(id: string) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Não autenticado.");
+  exigirDono(session.user.papel);
+
+  // Cancelar não apaga a venda (histórico fica preservado) nem devolve
+  // estoque automaticamente — decisão consciente: devolver estoque sem o
+  // mecânico conferir a peça de volta na prateleira criaria discrepância.
+  // Se a peça realmente voltou, ele ajusta o estoque manualmente em
+  // /admin/pecas.
+  await prisma.venda.updateMany({
+    where: { id, oficinaId: session.user.oficinaId, status: { not: "CANCELADO" } },
+    data: { status: "CANCELADO" },
+  });
+
+  revalidatePath("/vendas");
+}

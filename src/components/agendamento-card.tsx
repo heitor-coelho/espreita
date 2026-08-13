@@ -25,7 +25,40 @@ type AgendamentoCardProps = {
   cidadeOficina?: string | null;
 };
 
+// <li> fica só na casca — o conteúdo é exportado à parte
+// (AgendamentoCardConteudo) pra quem precisa compor o card dentro de outro
+// wrapper próprio (ex.: FilaAgendamentos, que adiciona botões de reordenar
+// ao lado). Um <li> dentro de outro <li> é HTML inválido e quebra a
+// hidratação — por isso a casca não pode ser reaproveitada nesses casos.
 export function AgendamentoCard({
+  agendamento: ag,
+  compact = false,
+  temNovidade = false,
+  clicavel = false,
+  chavePixOficina = null,
+  nomeOficina = "",
+  cidadeOficina = null,
+}: AgendamentoCardProps) {
+  return (
+    <li
+      className={`rounded-xl border border-border bg-surface ${
+        compact ? "p-2" : "p-3"
+      }`}
+    >
+      <AgendamentoCardConteudo
+        agendamento={ag}
+        compact={compact}
+        temNovidade={temNovidade}
+        clicavel={clicavel}
+        chavePixOficina={chavePixOficina}
+        nomeOficina={nomeOficina}
+        cidadeOficina={cidadeOficina}
+      />
+    </li>
+  );
+}
+
+export function AgendamentoCardConteudo({
   agendamento: ag,
   compact = false,
   temNovidade = false,
@@ -44,11 +77,7 @@ export function AgendamentoCard({
     "Veículo sem marca/modelo";
 
   return (
-    <li
-      className={`rounded-xl border border-border bg-surface ${
-        compact ? "p-2" : "p-3"
-      }`}
-    >
+    <>
       {clicavel ? (
         <Link
           href={`/agendamentos/${ag.id}`}
@@ -112,7 +141,7 @@ export function AgendamentoCard({
           )}
         </div>
       )}
-    </li>
+    </>
   );
 }
 

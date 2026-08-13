@@ -23,6 +23,27 @@ export async function iniciarAtendimento(formData: FormData) {
   revalidatePath("/agenda");
 }
 
+// Recebe a lista de ids na nova ordem (índice = posição na fila) e grava
+// `ordemFila` de acordo. Serve tanto pro modo de botões subir/descer
+// (que reordena o array em memória e reenvia tudo) quanto pro drag and
+// drop — a interação muda, o "salvar" é sempre este mesmo bulk update.
+export async function reordenarFila(idsEmOrdem: string[]) {
+  const session = await auth();
+  if (!session?.user) return;
+  if (idsEmOrdem.length === 0) return;
+
+  await prisma.$transaction(
+    idsEmOrdem.map((id, indice) =>
+      prisma.agendamento.updateMany({
+        where: { id, oficinaId: session.user.oficinaId, status: "AGENDADO" },
+        data: { ordemFila: indice },
+      }),
+    ),
+  );
+
+  revalidatePath("/");
+}
+
 export async function concluirAtendimento(formData: FormData) {
   const session = await auth();
   if (!session?.user) return;

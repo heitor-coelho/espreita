@@ -122,6 +122,10 @@ model Agendamento {
   usuarioResponsavel   Usuario?         @relation("UsuarioResponsavel", fields: [usuarioResponsavelId], references: [id])
   dataHora            DateTime
   status              StatusAgendamento @default(AGENDADO)
+  // Posição manual na fila do dia (tela "Hoje") — null = ordena por
+  // dataHora (comportamento padrão). Mecânico pode reordenar pra atender
+  // fora da ordem agendada sem precisar remarcar horário.
+  ordemFila           Int?
   problemaRelatado    String?
   servicoRealizado    String?
   valor               Decimal?          @db.Decimal(10, 2)
@@ -160,22 +164,31 @@ model Produto {
   @@map("produtos")
 }
 
+enum StatusPagamento {
+  PENDENTE
+  PAGO
+  CANCELADO
+}
+
 model Venda {
-  id            String   @id @default(cuid())
+  id            String          @id @default(cuid())
   oficinaId     String
-  oficina       Oficina  @relation(fields: [oficinaId], references: [id], onDelete: Cascade)
+  oficina       Oficina         @relation(fields: [oficinaId], references: [id], onDelete: Cascade)
   clienteId     String?
-  cliente       Cliente? @relation(fields: [clienteId], references: [id])
-  agendamentoId String?  @unique
+  cliente       Cliente?        @relation(fields: [clienteId], references: [id])
+  agendamentoId String?         @unique
   usuarioId     String
-  usuario       Usuario  @relation(fields: [usuarioId], references: [id])
-  dataHora      DateTime @default(now())
-  valorTotal    Decimal  @db.Decimal(10, 2)
-  criadoEm      DateTime @default(now())
+  usuario       Usuario         @relation(fields: [usuarioId], references: [id])
+  dataHora      DateTime        @default(now())
+  valorTotal    Decimal         @db.Decimal(10, 2)
+  status        StatusPagamento @default(PENDENTE)
+  pagoEm        DateTime?
+  criadoEm      DateTime        @default(now())
 
   itens ItemVenda[]
 
   @@index([oficinaId, dataHora])
+  @@index([oficinaId, status])
   @@map("vendas")
 }
 
