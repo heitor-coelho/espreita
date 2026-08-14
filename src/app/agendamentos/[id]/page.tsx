@@ -79,6 +79,28 @@ export default async function AgendamentoDetalhePage({
     (item) => item.status !== "PENDENTE",
   );
 
+  const itensPendentes = agendamento.itensRevisao.filter(
+    (item) => item.status === "PENDENTE",
+  ).length;
+
+  // Se algum item foi adicionado depois do último envio, o cliente ainda
+  // não viu ele — tratamos como uma revisão "atualizada" pra reenviar, e
+  // não como cobrança do que já foi mandado.
+  const temItemNovoDesdeEnvio =
+    agendamento.revisaoEnviadaEm !== null &&
+    agendamento.itensRevisao.some(
+      (item) => item.criadoEm > agendamento.revisaoEnviadaEm!,
+    );
+
+  const variante: "primeiro-envio" | "atualizacao" | "cobranca" | null =
+    !agendamento.revisaoEnviadaEm
+      ? "primeiro-envio"
+      : temItemNovoDesdeEnvio
+        ? "atualizacao"
+        : itensPendentes > 0
+          ? "cobranca"
+          : null; // já enviada, sem novidade e sem pendência: nada a fazer
+
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const linkPublico = `${baseUrl}/r/${agendamento.id}`;
 
@@ -201,6 +223,14 @@ export default async function AgendamentoDetalhePage({
               </span>
             </div>
           )}
+          {agendamento.revisaoEnviadaEm && itensPendentes > 0 && (
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-ink-muted">Aguardando resposta</span>
+              <span className="text-sm font-medium text-ink">
+                {itensPendentes === 1 ? "1 item" : `${itensPendentes} itens`}
+              </span>
+            </div>
+          )}
         </div>
       )}
 
@@ -221,23 +251,32 @@ export default async function AgendamentoDetalhePage({
           {agendamento.itensRevisao.length > 0 &&
             agendamento.cliente.telefone && (
               <div className="mt-4">
-                <EnviarRevisaoButton
-                  agendamentoId={agendamento.id}
-                  telefoneCliente={agendamento.cliente.telefone}
-                  nomeCliente={agendamento.cliente.nome}
-                  linkPublico={linkPublico}
-                  totalItens={agendamento.itensRevisao.length}
-                  valorTotal={valorTotal}
-                />
                 {agendamento.revisaoEnviadaEm && (
-                  <p className="mt-1 text-center text-[11px] text-ink-faint">
-                    Enviado em{" "}
+                  <p className="mb-2 text-center text-[11px] text-ink-faint">
+                    Revisão enviada em{" "}
                     {new Intl.DateTimeFormat("pt-BR", {
                       day: "2-digit",
                       month: "2-digit",
                       hour: "2-digit",
                       minute: "2-digit",
                     }).format(agendamento.revisaoEnviadaEm)}
+                  </p>
+                )}
+
+                {variante ? (
+                  <EnviarRevisaoButton
+                    agendamentoId={agendamento.id}
+                    telefoneCliente={agendamento.cliente.telefone}
+                    nomeCliente={agendamento.cliente.nome}
+                    linkPublico={linkPublico}
+                    totalItens={agendamento.itensRevisao.length}
+                    pendentes={itensPendentes}
+                    valorTotal={valorTotal}
+                    variante={variante}
+                  />
+                ) : (
+                  <p className="rounded-lg border border-border bg-surface p-3 text-center text-xs text-ink-faint">
+                    Cliente já respondeu todos os itens — nada pendente.
                   </p>
                 )}
               </div>

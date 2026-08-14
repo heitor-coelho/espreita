@@ -11,6 +11,8 @@ export default auth((req) => {
   const isPublicRoute =
     pathname.startsWith("/login") ||
     pathname.startsWith("/cadastro") ||
+    pathname.startsWith("/esqueci-senha") ||
+    pathname.startsWith("/redefinir-senha") ||
     pathname.startsWith("/r/");
 
   if (!isLoggedIn && !isPublicRoute) {

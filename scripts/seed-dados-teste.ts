@@ -199,6 +199,12 @@ async function main() {
       status: "PENDENTE",
     },
   });
+  // Simula que a revisão já foi mandada pro cliente pelo WhatsApp — reflete
+  // o cenário real de "2 aprovados + 1 aguardando resposta".
+  await prisma.agendamento.update({
+    where: { id: emAtendimento.id },
+    data: { revisaoEnviadaEm: new Date(Date.now() - 45 * 60 * 1000) },
+  });
 
   console.log("fila de hoje: 3 agendados + 1 em atendimento (com itens de revisão)");
 

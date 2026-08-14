@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { concluirAtendimento } from "@/app/actions/agendamentos";
 import { montarLinkWhatsapp } from "@/lib/whatsapp";
 import { gerarCodigoPix } from "@/lib/pix";
+import { celebrarAtendimentoConcluido } from "@/lib/celebrar";
 
 export function ConcluirAtendimentoForm({
   agendamentoId,
@@ -32,6 +33,7 @@ export function ConcluirAtendimentoForm({
 
     startTransition(async () => {
       await concluirAtendimento(formData);
+      celebrarAtendimentoConcluido();
 
       if (telefoneCliente) {
         const primeiroNome = nomeCliente.split(" ")[0];
@@ -54,7 +56,11 @@ export function ConcluirAtendimentoForm({
           mensagem += `\n\nPix copia e cola:\n${codigoPix}`;
         }
 
-        window.open(montarLinkWhatsapp(telefoneCliente, mensagem), "_blank");
+        // Pequeno atraso antes de sair pro WhatsApp — dá tempo do toast de
+        // comemoração aparecer antes da troca de app/aba no celular.
+        setTimeout(() => {
+          window.open(montarLinkWhatsapp(telefoneCliente, mensagem), "_blank");
+        }, 450);
       }
     });
   }

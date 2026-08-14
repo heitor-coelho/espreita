@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Package, QrCode } from "lucide-react";
+import { Package, QrCode, Users } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { exigirDono } from "@/lib/autorizacao";
 
@@ -33,6 +33,17 @@ export default async function AdminPage() {
         <div>
           <p className="text-sm font-medium text-ink">Cobrança via Pix</p>
           <p className="text-xs text-ink-muted">Chave Pix da oficina</p>
+        </div>
+      </Link>
+
+      <Link
+        href="/admin/funcionarios"
+        className="mt-2 flex items-center gap-3 rounded-xl border border-border bg-surface p-3"
+      >
+        <Users size={20} strokeWidth={1.75} className="text-ink-muted" />
+        <div>
+          <p className="text-sm font-medium text-ink">Funcionários</p>
+          <p className="text-xs text-ink-muted">Criar e gerenciar acessos</p>
         </div>
       </Link>
     </AppShell>

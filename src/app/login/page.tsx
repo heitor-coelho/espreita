@@ -5,7 +5,7 @@ import { login } from "./actions";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; senhaRedefinida?: string }>;
 }) {
   const params = await searchParams;
 
@@ -30,6 +30,12 @@ export default async function LoginPage({
         {params?.error && (
           <p className="rounded-lg bg-danger p-3 text-sm text-danger-ink">
             Telefone ou senha incorretos.
+          </p>
+        )}
+
+        {params?.senhaRedefinida && (
+          <p className="rounded-lg bg-badge-concluido p-3 text-sm text-badge-concluido-ink">
+            Senha redefinida! Entre com a senha nova.
           </p>
         )}
 
@@ -66,6 +72,12 @@ export default async function LoginPage({
             className="campo text-lg"
           />
         </div>
+
+        <p className="text-right text-xs">
+          <Link href="/esqueci-senha" className="text-ink-faint">
+            Esqueci minha senha
+          </Link>
+        </p>
 
         <button
           type="submit"

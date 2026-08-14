@@ -53,9 +53,26 @@ model Usuario {
   agendamentosResponsavel Agendamento[] @relation("UsuarioResponsavel")
   vendasRegistradas       Venda[]
   pushSubscriptions       PushSubscription[]
+  tokensRecuperacaoSenha  TokenRecuperacaoSenha[]
 
   @@index([oficinaId])
   @@map("usuarios")
+}
+
+// "Esqueci minha senha" — link por e-mail. Guardamos só o hash do token
+// (nunca o valor cru que vai na URL), pra um vazamento do banco não dar
+// acesso às contas. Expira em 30min e só pode ser usado uma vez.
+model TokenRecuperacaoSenha {
+  id        String    @id @default(cuid())
+  usuarioId String
+  usuario   Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiraEm  DateTime
+  usadoEm   DateTime?
+  criadoEm  DateTime  @default(now())
+
+  @@index([usuarioId])
+  @@map("tokens_recuperacao_senha")
 }
 
 model Cliente {

@@ -34,7 +34,16 @@
       "Bash(grep -v \"caret-color\\\\|hydrat\\\\|react.dev\\\\|^$\\\\|^-\\\\|^ \\\\|SegmentView\\\\|Boundary\\\\|LayoutRouter\\\\|InnerLayout\\\\|<AppShell\\\\|<div\\\\|<header\\\\|<main\\\\|<ul\\\\|<li\\\\|<Fila\\\\|<Agenda\\\\|<Resumo\\\\|<form\\\\|<input\\\\|Trie\\\\|HojePage\")",
       "Bash(node verificar-seed.js)",
       "Bash(kill 64634 64635 64647)",
-      "Bash(node verificar-vendas-v2.js)"
+      "Bash(node verificar-vendas-v2.js)",
+      "Bash(curl -s -o /dev/null -w \"http_code:%{http_code}\\\\n\" http://localhost:3000/login)",
+      "Bash(node test-cadastro.js)",
+      "Bash(mv /tmp/query.ts scripts/_query-tmp.ts)",
+      "Bash(sed -i 's#./src/lib/prisma#@/lib/prisma#' scripts/_query-tmp.ts)",
+      "Bash(node -e \"console.log\\(require.resolve\\('playwright'\\)\\)\")",
+      "Bash(grep -n \"redefinir-senha\\\\|recuperação de senha\" /tmp/next-dev.log | tail -10)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -c /tmp/cookiejar -b /tmp/cookiejar http://localhost:3000/login -o /dev/null)",
+      "Bash(npm test *)"
     ]
   }
 }
