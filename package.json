@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
@@ -15,6 +15,9 @@
     "db:studio": "prisma studio",
     "postinstall": "prisma generate",
     "oficina:criar": "tsx scripts/criar-oficina.ts",
+    "oficinas:listar": "tsx scripts/gerenciar-oficinas.ts listar",
+    "oficinas:suspender": "tsx scripts/gerenciar-oficinas.ts suspender",
+    "oficinas:reativar": "tsx scripts/gerenciar-oficinas.ts reativar",
     "db:seed-demo": "tsx scripts/seed-dados-teste.ts"
   },
   "dependencies": {

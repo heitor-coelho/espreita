@@ -25,7 +25,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           include: { oficina: true },
         });
 
-        if (!usuario || !usuario.ativo) return null;
+        // usuario.ativo: a própria oficina desativou esse funcionário.
+        // usuario.oficina.ativa: o vendedor do app suspendeu a oficina
+        // inteira (ex.: cliente inadimplente) — bloqueia todo mundo dela,
+        // incluindo o dono, mesmo com a senha certa.
+        if (!usuario || !usuario.ativo || !usuario.oficina.ativa) return null;
 
         const senhaValida = await comparePassword(senha, usuario.senhaHash);
         if (!senhaValida) return null;

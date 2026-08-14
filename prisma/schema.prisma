@@ -18,6 +18,13 @@ model Oficina {
   cidade    String?
   estado    String?
   chavePix  String?
+  // Chave-mestra de cobrança: hoje o pagamento é combinado fora do app
+  // (venda 1:1, Pix direto pro dono do produto), sem assinatura automática.
+  // Suspender aqui bloqueia o login de TODOS os usuários da oficina —
+  // é o "desligar" que o vendedor do app usa se o cliente parar de pagar.
+  // Só é alterado via script (scripts/gerenciar-oficinas.ts), nenhum DONO
+  // consegue mexer nisso pela própria oficina.
+  ativa     Boolean  @default(true)
   criadoEm  DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 

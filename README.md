@@ -67,6 +67,10 @@ Cada **Oficina** é isolada das demais (multi-tenant, toda query filtrada por
   (`PENDENTE` / `PAGO` / `CANCELADO`).
 - `Oficina.chavePix` — chave Pix cadastrada pelo dono, usada pra gerar
   cobrança (QR Code + copia e cola) nas vendas e ao concluir atendimentos.
+- `Oficina.ativa` — chave-mestra de cobrança (hoje combinada fora do app,
+  sem assinatura automática). Suspender bloqueia o login de todos os
+  usuários da oficina; só é alterado via `npm run oficinas:suspender`, veja
+  a seção de Scripts.
 
 Veja o schema completo em `prisma/schema.prisma`.
 
@@ -196,17 +200,20 @@ segunda tela.
 | Comando | O que faz |
 |---|---|
 | `npm run dev` | Servidor de desenvolvimento (Turbopack) |
-| `npm run build` | Build de produção |
+| `npm run build` | Aplica migrations pendentes (`prisma migrate deploy`) e gera o build de produção — é o comando que a hospedagem roda a cada deploy |
 | `npm run start` | Sobe o build de produção já gerado |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | Checagem de tipos (`tsc --noEmit`), sem gerar arquivos |
 | `npm run test` | Testes unitários (Vitest) |
 | `npm run test:watch` | Testes em modo watch |
 | `npm run db:generate` | Gera o Prisma Client a partir do schema |
-| `npm run db:migrate` | Cria/aplica uma migration (`prisma migrate dev`) |
+| `npm run db:migrate` | Cria/aplica uma migration em dev (`prisma migrate dev`) |
 | `npm run db:studio` | Interface visual do banco de dados |
 | `npm run oficina:criar` | Cria uma nova oficina + usuário dono (CLI interativa) |
 | `npm run db:seed-demo` | Popula dados de demonstração na "Oficina Teste" (não idempotente) |
+| `npm run oficinas:listar` | Lista todas as oficinas e o status (ativa/suspensa) |
+| `npm run oficinas:suspender -- "nome ou id"` | Bloqueia o login de todos os usuários de uma oficina (ex.: cliente inadimplente) |
+| `npm run oficinas:reativar -- "nome ou id"` | Libera o acesso de novo |
 
 Antes de subir qualquer mudança, o combo de verificação é:
 ```bash
@@ -215,19 +222,62 @@ npm run typecheck && npm run lint && npm test && npm run build
 
 ## Deploy em produção
 
-Ainda não configurado neste repositório (sem `vercel.json`, Dockerfile,
-etc. — hoje só roda localmente). Recomendação pra quando for colocar no ar:
+Stack recomendada: **Vercel** (hospedagem do Next.js) + **Neon** (Postgres).
+Um ambiente único de produção — sem staging separado por enquanto (ver
+raciocínio abaixo). Passo a passo:
 
-- **Hospedagem:** Vercel (integração nativa com Next.js, deploy automático a
-  cada push) + **Neon** ou **Railway** pro Postgres (planos gratuitos).
-- Configure no provedor de hospedagem as mesmas variáveis de ambiente do
-  `.env` — principalmente `DATABASE_URL` (apontando pro Postgres de
-  produção), `AUTH_SECRET` (gere um **novo**, diferente do de dev),
-  `NEXT_PUBLIC_APP_URL` (o domínio real), e as variáveis de `STORAGE_*` e
-  `RESEND_*` — sem elas, upload de mídia e recuperação de senha não
-  funcionam para os clientes reais.
-- Depois do primeiro deploy, crie a oficina de produção pelo próprio
-  `/cadastro` da aplicação já no ar.
+### 1. Banco de dados (Neon)
+
+1. Crie conta grátis em [neon.tech](https://neon.tech).
+2. **New Project** → dê um nome (ex.: `oficina-app-prod`).
+3. Copie a **connection string "pooled"** (recomendada pra ambientes
+   serverless como a Vercel) — algo como
+   `postgresql://usuario:senha@ep-xxx-pooler.region.aws.neon.tech/neondb?sslmode=require`.
+
+### 2. Hospedagem (Vercel)
+
+1. Crie conta grátis em [vercel.com](https://vercel.com) (login com GitHub
+   facilita, já linka os repositórios automaticamente).
+2. **Add New → Project** → importe o repositório `heitor-coelho/espreita`.
+3. O nome do projeto na Vercel já define a URL (`https://SEU-PROJETO.vercel.app`)
+   — anote antes de configurar as variáveis, você vai precisar dela no passo
+   seguinte.
+4. Antes de clicar em Deploy, configure as **Environment Variables** (mesmas
+   do `.env`, com valores de produção):
+
+   | Variável | Valor em produção |
+   |---|---|
+   | `DATABASE_URL` | A connection string pooled do Neon (passo 1) |
+   | `AUTH_SECRET` | **Gere um novo** com `openssl rand -base64 32` — nunca reuse o de dev |
+   | `NEXT_PUBLIC_APP_URL` | `https://SEU-PROJETO.vercel.app` (ou seu domínio próprio, se tiver) |
+   | `STORAGE_*` | As mesmas do R2 já configuradas localmente — adicione o domínio de produção na CORS Policy do bucket (R2 → bucket → Settings → CORS) |
+   | `RESEND_API_KEY` / `RESEND_FROM_EMAIL` | Ver aviso importante abaixo |
+   | `VAPID_PRIVATE_KEY` / `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_SUBJECT` | Pode reaproveitar as mesmas de dev |
+
+5. Clique em **Deploy**. O build já roda `prisma migrate deploy`
+   automaticamente antes do `next build` (configurado no `npm run build`) —
+   não precisa rodar migration na mão depois do deploy.
+6. Depois do primeiro deploy no ar, crie a primeira oficina de produção
+   pelo próprio `/cadastro` da aplicação — nada de rodar script no seu
+   computador apontando pra produção.
+
+> **Aviso sobre o Resend em produção:** sem verificar um domínio próprio no
+> Resend, o remetente de teste (`onboarding@resend.dev`) só entrega e-mail
+> pra caixa de entrada da própria conta Resend — **não chega pra outras
+> pessoas**. Isso significa que "esqueci minha senha" não vai funcionar de
+> verdade pros seus usuários reais até você verificar um domínio no Resend
+> (Resend → Domains → Add Domain, aponta uns registros DNS). Enquanto isso
+> não estiver feito, se alguém esquecer a senha, é você quem redefine na
+> mão (dono: sem solução própria ainda; funcionário: `/admin/funcionarios`).
+
+### Por que sem ambiente de homologação separado
+
+Com poucos usuários de teste avisados (que topam usar sabendo que é
+experimental), o ambiente local já cumpre esse papel — toda mudança passa
+por aqui, testada, antes de qualquer deploy. Como a stack é Vercel + Neon,
+dá pra criar preview deployments (URL + banco isolados por branch) o dia
+que precisar testar algo arriscado antes de expor pros usuários reais, sem
+precisar manter um segundo ambiente full-time.
 
 ## Status do projeto
 
@@ -247,9 +297,17 @@ etc. — hoje só roda localmente). Recomendação pra quando for colocar no ar:
   revisão aprovada), relatórios de vendas por período
 - Cobrança via Pix (QR Code + copia e cola, gerado sem gateway pago)
 - Notificações push (aviso ao mecânico quando cliente responde a revisão)
+- Suspensão de oficina inadimplente (`npm run oficinas:suspender`) — trava
+  de acesso pro vendedor do produto, sem cobrança automática ainda
 - Testes unitários configurados
+- Deploy em produção documentado (Vercel + Neon, migrations automáticas no
+  build)
 
 **Em aberto (não bloqueia uso, mas vale saber):**
-- Deploy em produção ainda não configurado (roda só local por enquanto)
+- Cobrança recorrente automática (hoje é combinada fora do app) — só vale a
+  pena construir quando o volume de clientes tornar o controle manual
+  inviável
+- Recuperação de senha por e-mail só entrega de verdade depois de verificar
+  um domínio próprio no Resend (ver seção de Deploy)
 - Nota Fiscal (NFC-e/NF-e) e integração com maquininha — dependem de decisão
   de fornecedor/regime tributário, ainda não iniciado
